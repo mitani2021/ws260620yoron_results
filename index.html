@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タカモリ新聞 ミタニ市長選 世論調査 集計結果</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 1em;
+      text-align: center;
+      color: #333;
+    }
+
+    .chart-container {
+      width: 90%;
+      max-width: 850px;
+      margin-bottom: 40px;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+
+    .note {
+      margin-bottom: 2em;
+      color: #555;
+      text-align: center;
+      font-size: 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>タカモリ新聞 ミタニ市長選 世論調査 集計結果</h1>
+
+  <p class="note">回答が送信されると、自動的に集計結果に反映されます。</p>
+
+  <div class="chart-container">
+    <h2>回答者の居住地区</h2>
+    <canvas id="districtChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>最も重要だと思う争点</h2>
+    <canvas id="issueChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>支持する候補者</h2>
+    <canvas id="candidateChart"></canvas>
+  </div>
+
+  <script>
+    async function fetchData() {
+      const response = await fetch('https://docs.google.com/spreadsheets/d/1Qt6SLEYL9YoF9VeVvVkZOENu6-IUXdU2ymjAH3d6sxo/gviz/tq?tqx=out:json');
+      const text = await response.text();
+
+      const json = JSON.parse(text.substr(47).slice(0, -2));
+      const rows = json.table.rows;
+
+      const districtCount = {};
+      const issueCount = {};
+      const candidateCount = {};
+
+      for (const row of rows) {
+        const district = row.c[1]?.v;
+        const issue = row.c[2]?.v;
+        const candidate = row.c[3]?.v;
+
+        if (district) {
+          districtCount[district] = (districtCount[district] || 0) + 1;
+        }
+
+        if (issue) {
+          issueCount[issue] = (issueCount[issue] || 0) + 1;
+        }
+
+        if (candidate) {
+          candidateCount[candidate] = (candidateCount[candidate] || 0) + 1;
+        }
+      }
+
+      const districtData = Object.entries(districtCount).sort((a, b) => b[1] - a[1]);
+      const issueData = Object.entries(issueCount).sort((a, b) => b[1] - a[1]);
+      const candidateData = Object.entries(candidateCount).sort((a, b) => b[1] - a[1]);
+
+      function createChart(ctx, data) {
+        if (data.length === 0) {
+          return;
+        }
+
+        const maxVotes = Math.max(...data.map(d => d[1]));
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.map(d => d[0]),
+            datasets: [{
+              data: data.map(d => d[1]),
+              backgroundColor: 'red',
+              barThickness: 24
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              },
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                clamp: true,
+                color: '#fff',
+                font: {
+                  size: 18
+                },
+                formatter: function(value) {
+                  return value + (value === maxVotes ? ' 🌸' : '');
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: {
+                  font: {
+                    size: 21
+                  },
+                  precision: 0
+                }
+              },
+              y: {
+                ticks: {
+                  font: {
+                    size: 21
+                  }
+                }
+              }
+            }
+          },
+          plugins: [ChartDataLabels]
+        });
+      }
+
+      createChart(document.getElementById('districtChart'), districtData);
+      createChart(document.getElementById('issueChart'), issueData);
+      createChart(document.getElementById('candidateChart'), candidateData);
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
