@@ -129,17 +129,24 @@
           options: {
             indexAxis: 'y',
             responsive: true,
+            layout: {
+              padding: {
+                right: 30
+              }
+            },
             plugins: {
               legend: {
                 display: false
               },
               datalabels: {
                 anchor: 'end',
-                align: 'end',
+                align: 'left',
+                offset: 8,
                 clamp: true,
                 color: '#fff',
                 font: {
-                  size: 18
+                  size: 18,
+                  weight: 'bold'
                 },
                 formatter: function(value) {
                   return value + (value === maxVotes ? ' 🌸' : '');
@@ -149,6 +156,7 @@
             scales: {
               x: {
                 beginAtZero: true,
+                suggestedMax: Math.max(...data.map(d => d[1])) + 2,
                 ticks: {
                   font: {
                     size: 21
